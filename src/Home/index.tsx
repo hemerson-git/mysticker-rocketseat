@@ -3,21 +3,26 @@ import { Dimensions, SafeAreaView } from "react-native";
 import {
   ScrollView,
   NativeBaseProvider,
-  Box,
   View,
   Image,
   TextArea,
   ZStack,
+  Pressable,
+  Text,
 } from "native-base";
 import { Camera, CameraType } from "expo-camera";
+import { captureRef } from "react-native-view-shot";
+import * as Sharing from "expo-sharing";
 
+import { styles } from "./styles";
+
+// COMPONENTS
 import { Header } from "../components/Header";
 import { Button } from "../components/Button";
 import { PositionChoice } from "../components/PositionChoice";
-
-import { styles } from "./styles";
 import { Cross } from "../components/Cross";
 
+// UTILS
 import { POSITIONS, PositionProps } from "../utils/positions";
 
 export function Home() {
@@ -29,10 +34,17 @@ export function Home() {
   );
 
   const cameraRef = useRef<Camera>(null);
+  const screenshotRef = useRef(null);
 
   async function handleTakePicture() {
     const photo = await cameraRef.current.takePictureAsync();
     setPhotoURI(photo.uri);
+  }
+
+  async function shareScreenshot() {
+    const screenshot = await captureRef(screenshotRef);
+    // console.log(screenshotRef.current);
+    await Sharing.shareAsync("file://" + screenshot);
   }
 
   useEffect(() => {
@@ -57,7 +69,7 @@ export function Home() {
           contentContainerStyle={styles.scroll}
           showsVerticalScrollIndicator={false}
         >
-          <View>
+          <View ref={screenshotRef}>
             <Header position={positionSelected} />
 
             <View style={styles.picture}>
@@ -71,6 +83,7 @@ export function Home() {
                         ? photoURI
                         : "https://cdn.pixabay.com/photo/2018/11/13/21/43/instagram-3814055_960_720.png",
                     }}
+                    onLoad={shareScreenshot}
                     style={styles.camera}
                   />
 
@@ -90,6 +103,7 @@ export function Home() {
               <View style={styles.player}>
                 <TextArea
                   autoCompleteType={"none"}
+                  autoCorrect={false}
                   placeholder="Digite seu nome aqui"
                   style={styles.name}
                   numberOfLines={1}
@@ -100,6 +114,8 @@ export function Home() {
                   h="12"
                   borderWidth={0}
                   onChangeText={setPlayerName}
+                  textAlign="center"
+                  keyboardAppearance="dark"
                 />
               </View>
             </View>
@@ -109,6 +125,14 @@ export function Home() {
             onChangePosition={setPositionSelected}
             positionSelected={positionSelected}
           />
+
+          <View alignItems="center" mt="4">
+            <Pressable onPress={() => setPhotoURI(null)}>
+              <Text color="white" fontWeight="semibold">
+                Nova Foto
+              </Text>
+            </Pressable>
+          </View>
 
           <Button title="Compartilhar" onPress={handleTakePicture} />
         </ScrollView>
